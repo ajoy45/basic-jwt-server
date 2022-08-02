@@ -1,5 +1,6 @@
 const express = require('express')
 const cors=require('cors')
+var jwt = require('jsonwebtoken');
 const app = express()
 const port =process.env.PORT|| 5000
 require('dotenv').config()
@@ -15,6 +16,27 @@ async function run() {
     try {
        await client.connect()
       console.log('db connected')
+      const productCollection=client.db("products").collection('data');
+      app.post('/login',(req,res)=>{
+        const email=req.body
+        // console.log(email)
+        const token = jwt.sign(email, process.env.ACCES_TOKEN);
+        res.send({token})
+      })
+      app.post('/upladepd',async(req,res)=>{
+         const product=req.body;
+         const tokenInfo=req.headers.authorization;
+        //  console.log(tokenInfo)
+         const[email,accesToken]=tokenInfo.split(' ')
+         const decoded = jwt.verify(accesToken, process.env.ACCES_TOKEN);
+        //  console.log(decoded.email)
+        //  console.log(email,"ttt",accesToken)
+        if(email===decoded.email){
+            const result=await productCollection.insertOne(product)
+            res.send(result)
+        }
+        
+      })
     } finally {
       
     }
